@@ -28,8 +28,7 @@ const credentials = JSON.parse(fs.readFileSync("./credentials.json", "utf8"));
 		process.exit(0);
 	}
 
-
-	if ((await axios.post(`https://${credentials['eduCode']}hcs.eduro.go.kr/v2/validatePassword`, JSON.stringify({
+	let ret = (await axios.post(`https://${credentials['eduCode']}hcs.eduro.go.kr/v2/validatePassword`, JSON.stringify({
 		'deviceUuid': '',
 		'password': rsa_encrypt(credentials['password'])
 	}), {
@@ -37,10 +36,13 @@ const credentials = JSON.parse(fs.readFileSync("./credentials.json", "utf8"));
 			Authorization: jwt,
 			'Content-Type': 'application/json'
 		}
-	})).data !== true) {
+	})).data;
+	if (typeof ret !== "string") {
+		//console.log(ret); { isError: true ... }
 		console.log("비밀번호를 잘못 입력했거나 로그인 시도 횟수를 초과하였습니다.");
-		process.exit(0); //해당 부분 주석치면 비밀번호 확인 없이 진행 가능
+		process.exit(0);
 	}
+	jwt = ret.replace(/"/g, "");
 
 	const users = (await axios.post(`https://${credentials['eduCode']}hcs.eduro.go.kr/v2/selectUserGroup`, JSON.stringify({}), {
 		headers: {
